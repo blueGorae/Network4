@@ -2,14 +2,13 @@ import socket
 import threading
 import base64
 import pyaudio
-import cv2
-from PIL import ImageTk, Image
+import zlib
+
 import time
 import cv2
-import numpy as np
 import tkinter as tk
-import zlib
-import struct
+import numpy as np
+from PIL import ImageTk, Image
 
 CHUNK = 1024
 PAYLOAD = 4096
@@ -19,11 +18,6 @@ RATE = 20000
 IMG_PAYLOAD = 160 * 120 * 3
 COMPRESSED_IMG_SIZE = [160, 120, 3]
 IMG_SIZE = [320, 240, 3]
-
-import random
-HOST="141.223.210.6"
-PORT=8080
-USERNAME="FAKE"
 
 class Chatting():
     def __init__(self):
@@ -97,17 +91,15 @@ class Chatting():
                 
                 self.sendVideoPanel.configure(image=img)
                 self.sendVideoPanel.image = img        
-                       
+                
                 send_frame = np.array(send_frame, dtype = np.uint8).reshape(1, IMG_PAYLOAD)
-                jpg_as_text = bytearray(send_frame)
-                databytes = jpg_as_text
-                databytes = zlib.compress(jpg_as_text, 9) 
+                databytes = zlib.compress(bytearray(send_frame), 9) 
 
                 # send the length of the data
                 data_length = len(databytes).to_bytes(4, byteorder='big')
                 self.connInfo.video_socket.send(data_length)
                 time.sleep(0.1)
-                # sene the data
+                # send the frame
                 self.connInfo.video_socket.send(databytes)
             except Exception as e :
                 print(e)
@@ -120,8 +112,7 @@ class Chatting():
                 data_length = int.from_bytes(data, 'big')
                 databytes = self.receiveAll(self.connInfo.video_socket, data_length)
                 databytes = zlib.decompress(databytes)
-                recv_frame = np.array(list(databytes))
-                recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
+                recv_frame = np.array(list(databytes), dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
                 recv_frame = cv2.resize(recv_frame, (IMG_SIZE[1], IMG_SIZE[0]))
                 cv2.imshow('Friends', recv_frame)
                 if cv2.waitKey(100) & 0xFF == ord('q'):
@@ -180,7 +171,6 @@ class Chatting():
         self.usersPanel= tk.Listbox(self.mainFrame)
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
-
         #sendVideoPanel
         self.sendVideoPanel = tk.Label(self.root)
         self.sendVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
@@ -236,35 +226,7 @@ class Connect():
         loginButton.bind("<Button-1>", lambda event: self.loginClick(event,host, port, username,window))
         loginButton.pack()
 
-        defaultButton = tk.Button(text = "Default")
-        defaultButton.bind("<Button-1>", lambda event: self.defaultClick(event,host, port, username,window))
-        defaultButton.pack()
-
         window.mainloop()
-
-    def defaultClick(self, event, host, port, username, window):
-        self.host = HOST
-        self.port = PORT
-        self.user_name = USERNAME + str(random.randrange(1,1000))
-
-        self.text_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.text_socket.connect((self.host, self.port))
-        self.text_socket.send(bytes("text"+self.user_name, "utf-8"))
-
-        self.voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.voice_socket.connect((self.host, self.port))
-        self.voice_socket.send(bytes("voice"+self.user_name, "utf-8"))
-
-        self.user_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.user_socket.connect((self.host, self.port))
-        self.user_socket.send(bytes("user"+self.user_name, "utf-8"))
-
-        self.video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.video_socket.connect((self.host, self.port))
-        self.video_socket.send(bytes("video"+self.user_name, "utf-8"))
-
-        window.destroy()
-
 
     def loginClick(self, event, host, port, username, window):
         
