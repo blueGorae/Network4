@@ -6,7 +6,7 @@ import threading
 HOST = ''
 PORT = 8080
 PAYLOAD = 4096
-IMG_PAYLOAD = 480*640*3
+IMG_PAYLOAD = 240*320*3
 
 def main():
     # Store client information (conn, addr)

@@ -15,8 +15,8 @@ PAYLOAD = 4096
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 20000
-IMG_PAYLOAD = 640 * 480 * 3
-IMG_SIZE = [480, 640, 3]
+IMG_PAYLOAD = 320 * 240 * 3
+IMG_SIZE = [240, 320, 3]
 
 
 class Chatting():
@@ -84,7 +84,6 @@ class Chatting():
                 # Capture frame-by-frame
                 ret, frame = self.cap.read()
                 send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
-
                 img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)	
                 img = ImageTk.PhotoImage(img)
