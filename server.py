@@ -113,8 +113,8 @@ def main():
         try:
             for user_name, conn_list in clientList.items():
                 # Send message to other clients
-                #if rcv_user_name != user_name:
-                conn_list["video"].send(rcv_data)
+                if rcv_user_name != user_name:
+                    conn_list["video"].send(rcv_data)
         except Exception as e:
             print(e)
 
