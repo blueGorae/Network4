@@ -20,11 +20,6 @@ IMG_PAYLOAD = 160 * 120 * 3
 COMPRESSED_IMG_SIZE = [160, 120, 3]
 IMG_SIZE = [320, 240, 3]
 
-import random
-HOST="141.223.210.6"
-PORT=8080
-USERNAME="FAKE"
-
 class Chatting():
     def __init__(self):
         self.connInfo = Connect()
@@ -230,11 +225,7 @@ class Connect():
         loginButton = tk.Button(text = "Login")
         loginButton.bind("<Button-1>", lambda event: self.loginClick(event,host, port, username,window))
         loginButton.pack()
-
-        defaultButton = tk.Button(text = "Default")
-        defaultButton.bind("<Button-1>", lambda event: self.defaultClick(event,host, port, username,window))
-        defaultButton.pack()
-
+        
         window.mainloop()
 
     def defaultClick(self, event, host, port, username, window):
