@@ -2,14 +2,14 @@ import socket
 import threading
 import base64
 import pyaudio
-import cv2
-from PIL import ImageTk, Image
+import zlib
+
 import time
 import cv2
-import numpy as np
 import tkinter as tk
-import zlib
-import struct
+import cv2
+import numpy as np
+from PIL import ImageTk, Image
 
 CHUNK = 1024
 PAYLOAD = 4096
@@ -97,17 +97,15 @@ class Chatting():
                 
                 self.sendVideoPanel.configure(image=img)
                 self.sendVideoPanel.image = img        
-                       
+                
                 send_frame = np.array(send_frame, dtype = np.uint8).reshape(1, IMG_PAYLOAD)
-                jpg_as_text = bytearray(send_frame)
-                databytes = jpg_as_text
-                databytes = zlib.compress(jpg_as_text, 9) 
+                databytes = zlib.compress(bytearray(send_frame), 9) 
 
                 # send the length of the data
                 data_length = len(databytes).to_bytes(4, byteorder='big')
                 self.connInfo.video_socket.send(data_length)
                 time.sleep(0.1)
-                # sene the data
+                # send the frame
                 self.connInfo.video_socket.send(databytes)
             except Exception as e :
                 print(e)
@@ -120,8 +118,7 @@ class Chatting():
                 data_length = int.from_bytes(data, 'big')
                 databytes = self.receiveAll(self.connInfo.video_socket, data_length)
                 databytes = zlib.decompress(databytes)
-                recv_frame = np.array(list(databytes))
-                recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
+                recv_frame = np.array(list(databytes), dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
                 recv_frame = cv2.resize(recv_frame, (IMG_SIZE[1], IMG_SIZE[0]))
                 cv2.imshow('Friends', recv_frame)
                 if cv2.waitKey(100) & 0xFF == ord('q'):
@@ -179,7 +176,6 @@ class Chatting():
         #usersPanel
         self.usersPanel= tk.Listbox(self.mainFrame)
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
-
 
         #sendVideoPanel
         self.sendVideoPanel = tk.Label(self.root)
