@@ -229,12 +229,6 @@ class Connect():
         self.port = int(port.get())
         self.user_name = username.get()
 
-        '''
-        self.host = '127.0.0.1'
-        self.port = 8080
-        self.user_name = "ddd"
-        '''
-
         self.text_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.text_socket.connect((self.host, self.port))
         self.text_socket.send(bytes("text"+self.user_name, "utf-8"))
