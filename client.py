@@ -2,8 +2,9 @@ import socket
 import threading
 import base64
 import pyaudio
+import cv2
+from PIL import ImageTk, Image
 import time
-
 import cv2
 import numpy as np
 import tkinter as tk
@@ -36,6 +37,7 @@ class Chatting():
         self.connInfo.voice_socket.close()
         self.connInfo.text_socket.close()
         self.connInfo.user_socket.close()
+        self.cap.release()
 
     def exitClick(self, event):
         self.clearResources()
@@ -64,7 +66,7 @@ class Chatting():
                 data = self.send_stream.read(CHUNK, exception_on_overflow=False)
                 self.connInfo.voice_socket.send(data)
             except:
-                print("Error was ouccured during sending message")
+                print("Error was ouccured during sending voice")
                 self.connection = False
 
     def receivingVoice(self):
@@ -73,7 +75,7 @@ class Chatting():
                 data = self.connInfo.voice_socket.recv(PAYLOAD)
                 self.receive_stream.write(data, CHUNK)
             except:
-                print("Error was occured during receiving message")
+                print("Error was occured during receiving voice")
                 self.connection = False
 
     def sendingVideo(self):
@@ -81,26 +83,39 @@ class Chatting():
             try:
                 # Capture frame-by-frame
                 ret, frame = self.cap.read()
-                rgb_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
-                rgb_frame_bytes = rgb_frame.tobytes()
-                self.connInfo.video_socket.send(rgb_frame_bytes)
+                send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
+
+                img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)	
+                img = ImageTk.PhotoImage(img)
+                
+                self.sendVideoPanel.configure(image=img)
+                self.sendVideoPanel.image = img               
+                    
+                send_frame_bytes = send_frame.tobytes()
+                self.connInfo.video_socket.send(send_frame_bytes)
                 time.sleep(0.1)
-            except Exception as e:
+            except:
                 print("Error was occured during sending Video")
                 self.connection = False
-        # When everything done, release the capture
-        self.cap.release()
     
     def receivingVideo(self):
         while self.connection:
             try:
                 data = self.connInfo.video_socket.recv(IMG_PAYLOAD)
-                frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
-                cv2.imshow('video frames', frame)
+                recv_frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
+
+                img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)	
+                img = ImageTk.PhotoImage(img)
+                
+                self.recvVideoPanel.configure(image=img)
+                self.recvVideoPanel.image = img               
+
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
-            except Exception as e:
-                print(e)
+            except:
+                print("Error was occured during receiving voice")
                 self.connection = False
 
     def receivingUsers(self):
@@ -111,7 +126,7 @@ class Chatting():
                 for i, user in enumerate(data.split(',')):
                     self.usersPanel.insert(i+1, '%s\n' % user)
             except:
-                print("Error was occured during receiving message")
+                print("Error was occured during receiving user message")
                 self.connection = False
 
     def run(self):
@@ -146,6 +161,15 @@ class Chatting():
         self.usersPanel= tk.Listbox(self.mainFrame)
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
+
+        #sendVideoPanel
+        self.sendVideoPanel = tk.Label(self.root)
+        self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
+
+        #recvVideoPanel
+        self.recvVideoPanel = tk.Label(self.root)
+        self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
+
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
         self.buttonExit["text"] = "Exit"
@@ -153,13 +177,12 @@ class Chatting():
         self.buttonExit.grid(column=2, row=2, sticky=tk.N + tk.S + tk.W + tk.E)
         self.buttonExit.bind("<Button-1>", self.exitClick)
 
-        threading._start_new_thread(self.receivingMsg,())
-        threading._start_new_thread(self.sendingVoice,())
-        threading._start_new_thread(self.sendingVideo,())
-        threading._start_new_thread(self.receivingVoice,())
-        threading._start_new_thread(self.receivingUsers, ())
-        threading._start_new_thread(self.receivingVideo, ())
-
+        thread_name_lists = [self.receivingMsg, self.sendingVoice, self.sendingVideo, self.receivingVoice, self.receivingUsers, self.receivingVideo]
+        for thread_name in thread_name_lists:
+            thread = threading.Thread(target=thread_name, args=())
+            thread.daemon = True
+            thread.start()
+        
         try:
             self.root.mainloop()
         finally:
