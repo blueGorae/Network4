@@ -104,8 +104,8 @@ class Chatting():
                 databytes = b''
                 while len(databytes) != IMG_PAYLOAD:
                     to_read = IMG_PAYLOAD - len(databytes)
-                    if to_read > IMG_SIZE:
-                        databytes += self.connInfo.video_socket.recv(1000 * CHUNK)
+                    if to_read > IMG_PAYLOAD:
+                        databytes += self.connInfo.video_socket.recv(IMG_PAYLOAD)
                     else:
                         databytes += self.connInfo.video_socket.recv(to_read)
                 #databytes = self.connInfo.video_socket.recv(IMG_PAYLOAD)
