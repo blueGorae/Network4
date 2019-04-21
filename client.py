@@ -84,12 +84,14 @@ class Chatting():
                 # Capture frame-by-frame
                 ret, frame = self.cap.read()
                 send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
+
                 img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)	
                 img = ImageTk.PhotoImage(img)
                 
-                #self.sendVideoPanel.configure(image=img)
-                #self.sendVideoPanel.image = img               
+                self.sendVideoPanel.configure(image=img)
+                self.sendVideoPanel.image = img               
+                    
                 send_frame_bytes = send_frame.tobytes()
                 start_index=0
                 while start_index != len(send_frame_bytes):
@@ -118,14 +120,14 @@ class Chatting():
                 #databytes = self.connInfo.video_socket.recv(IMG_PAYLOAD)
 
                 recv_frame = np.fromstring(databytes, np.uint8).reshape(IMG_SIZE)
-                cv2.imshow('ffff', recv_frame)
-                #img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
+                cv2.imshow('Friends', recv_frame)
+
+                # img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
+                # img = Image.fromarray(img)	
+                # img = ImageTk.PhotoImage(img)
                 
-                #img = Image.fromarray(img)	
-                #img = ImageTk.PhotoImage(img)
-                
-                #self.recvVideoPanel.configure(image=img)
-                #self.recvVideoPanel.image = img               
+                # self.recvVideoPanel.configure(image=img)
+                # self.recvVideoPanel.image = img               
 
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
@@ -179,11 +181,11 @@ class Chatting():
 
         #sendVideoPanel
         self.sendVideoPanel = tk.Label(self.root)
-        self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.sendVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #recvVideoPanel
-        self.recvVideoPanel = tk.Label(self.root)
-        self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
+        # self.recvVideoPanel = tk.Label(self.root)
+        # self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
