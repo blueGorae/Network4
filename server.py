@@ -88,20 +88,31 @@ def main():
         # Regard the next received data as message
         while connection:
             try:
-                data = conn.recv(IMG_PAYLOAD)
-                sendingVideo(user_name, data)
+                savedClientList = clientList
+                length_data = conn.recv(4)
+                length = int.from_bytes(length_data, 'big')
+                data = conn.recv(length)
+                sendingVideo(savedClientList, user_name, length_data)
+                sendingVideo(savedClientList, user_name, data)
             except Exception:
                 connection = False
+    
+    def receiveAll(self, socket, size):
+        databytes = b''
+        while len(databytes) != size:
+            to_read = size - len(databytes)
+            databytes += socket.recv(to_read)
+        return databytes
 
-    def sendingVideo(rcv_user_name, data_to_be_sent):
+    def sendingVideo(clientList, rcv_user_name, data_to_be_sent):
         #print(data_to_be_sent)
         try:
             for user_name, conn_list in clientList.items():
                 # Send message to other clients
                 if rcv_user_name != user_name:
                     conn_list["video"].send(data_to_be_sent)
-        except Exception as e:
-            print(e)
+        except:
+            pass
 
     def sendingMsg(rcv_user_name, rcv_data):
         data = '[' + rcv_user_name + '] ' + rcv_data.decode('utf-8')

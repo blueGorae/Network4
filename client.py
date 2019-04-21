@@ -3,6 +3,7 @@ import threading
 import base64
 import pyaudio
 import zlib
+from sys import exit
 
 import time
 import cv2
