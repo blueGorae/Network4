@@ -16,9 +16,14 @@ PAYLOAD = 4096
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 20000
-IMG_PAYLOAD = 320 * 240 * 3
-IMG_SIZE = [240, 320, 3]
+IMG_PAYLOAD = 160 * 120 * 3
+COMPRESSED_IMG_SIZE = [160, 120, 3]
+IMG_SIZE = [320, 240, 3]
 
+import random
+HOST="141.223.210.6"
+PORT=8080
+USERNAME="FAKE"
 
 class Chatting():
     def __init__(self):
@@ -84,7 +89,7 @@ class Chatting():
             try:
                 # Capture frame-by-frame
                 ret, frame = self.cap.read()
-                send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
+                send_frame = cv2.resize(frame, (COMPRESSED_IMG_SIZE[1], COMPRESSED_IMG_SIZE[0]))
 
                 img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)	
@@ -95,11 +100,18 @@ class Chatting():
                        
                 send_frame = np.array(send_frame, dtype = np.uint8).reshape(1, IMG_PAYLOAD)
                 jpg_as_text = bytearray(send_frame)
+                databytes = jpg_as_text
+                databytes = zlib.compress(jpg_as_text, 9) 
 
-                send_frame_bytes = jpg_as_text #zlib.compress(jpg_as_text, 9) 
-
-                self.connInfo.video_socket.send(send_frame_bytes)
+                # send the length of the serialized data first
+                data_length = len(databytes).to_bytes(4, byteorder='big')
+                #print(data_length) 
+                self.connInfo.video_socket.send(data_length)
                 time.sleep(0.1)
+                # send the real data
+                self.sendAll(self.connInfo.video_socket, databytes)
+                #self.connInfo.video_socket.send(send_frame_bytes)
+                
             except Exception as e :
                 print(e)
                 self.connection = False
@@ -107,22 +119,16 @@ class Chatting():
     def receivingVideo(self):
         while self.connection:
             try:
-
-                databytes = b''                
-
-                while len(databytes) != IMG_PAYLOAD:
-                    to_read = IMG_PAYLOAD - len(databytes)
-                    if to_read > IMG_PAYLOAD:
-                        databytes += self.connInfo.video_socket.recv(IMG_PAYLOAD)
-                    else:
-                        databytes += self.connInfo.video_socket.recv(to_read)
-
-
-                #databytes = self.connInfo.video_socket.recv(IMG_PAYLOAD)
-
-                #recv_frame = zlib.decompress(databytes)
+                data = self.receiveAll(self.connInfo.video_socket, 4)
+                data_length = int.from_bytes(data, 'big')
+                # print(str(len(data))+":"+str(data_length))
+                print(data_length)
+                databytes = self.receiveAll(self.connInfo.video_socket, data_length)
+                #print(databytes)
+                databytes = zlib.decompress(databytes)
                 recv_frame = np.array(list(databytes))
-                recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(IMG_SIZE)
+                recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
+                recv_frame = cv2.resize(recv_frame, (IMG_SIZE[1], IMG_SIZE[0]))
                 cv2.imshow('Friends', recv_frame)
                 
                 if cv2.waitKey(100) & 0xFF == ord('q'):
@@ -141,6 +147,29 @@ class Chatting():
             except:
                 print("Error was occured during receiving user message")
                 self.connection = False
+    def sendAll(self, socket, data):
+        while len(data) > 0:
+            if (1000 * CHUNK) <= len(data):
+                sentData = data[:(1000 * CHUNK)]
+                data = data[(1000 * CHUNK):]
+                socket.send(sentData)
+            else:
+                sentData = data
+                socket.send(sentData)
+                data = b''
+    
+    def receiveAll(self, socket, size):
+        databytes = b''
+        # print(size)
+        while len(databytes) != size:
+            print(databytes)
+            to_read = size - len(databytes)
+            if to_read > (IMG_PAYLOAD):
+                databytes += socket.recv(IMG_PAYLOAD)
+            else:
+                databytes += socket.recv(to_read)
+
+        return databytes
 
     def run(self):
         self.root = tk.Tk()
@@ -234,7 +263,36 @@ class Connect():
         loginButton.bind("<Button-1>", lambda event: self.loginClick(event,host, port, username,window))
         loginButton.pack()
 
+        defaultButton = tk.Button(text = "Default")
+        defaultButton.bind("<Button-1>", lambda event: self.defaultClick(event,host, port, username,window))
+        defaultButton.pack()
+
         window.mainloop()
+
+    def defaultClick(self, event, host, port, username, window):
+        print("???")
+        self.host = HOST
+        self.port = PORT
+        self.user_name = USERNAME + str(random.randrange(1,1000))
+
+        self.text_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.text_socket.connect((self.host, self.port))
+        self.text_socket.send(bytes("text"+self.user_name, "utf-8"))
+
+        self.voice_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.voice_socket.connect((self.host, self.port))
+        self.voice_socket.send(bytes("voice"+self.user_name, "utf-8"))
+
+        self.user_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.user_socket.connect((self.host, self.port))
+        self.user_socket.send(bytes("user"+self.user_name, "utf-8"))
+
+        self.video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.video_socket.connect((self.host, self.port))
+        self.video_socket.send(bytes("video"+self.user_name, "utf-8"))
+
+        window.destroy()
+
 
     def loginClick(self, event, host, port, username, window):
         
