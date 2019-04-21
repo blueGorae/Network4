@@ -50,7 +50,6 @@ class Chatting():
         exit(0)
 
     def sendMessageClick(self, event, textField):
-        print(textField.get())
         sendData = bytes(textField.get(), "utf-8") 
         self.connInfo.text_socket.send(sendData)
         textField.delete(0, "end") #clears textField
@@ -263,7 +262,6 @@ class Connect():
 
 
     def loginClick(self, event, host, port, username, window):
-        
         self.host = host.get()
         self.port = int(port.get())
         self.user_name = username.get()
