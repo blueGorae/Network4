@@ -37,6 +37,7 @@ class Chatting():
         self.connInfo.voice_socket.close()
         self.connInfo.text_socket.close()
         self.connInfo.user_socket.close()
+        self.cap.release()
 
     def exitClick(self, event):
         self.clearResources()
@@ -65,7 +66,7 @@ class Chatting():
                 data = self.send_stream.read(CHUNK, exception_on_overflow=False)
                 self.connInfo.voice_socket.send(data)
             except:
-                print("Error was ouccured during sending message")
+                print("Error was ouccured during sending voice")
                 self.connection = False
 
     def receivingVoice(self):
@@ -74,7 +75,7 @@ class Chatting():
                 data = self.connInfo.voice_socket.recv(PAYLOAD)
                 self.receive_stream.write(data, CHUNK)
             except:
-                print("Error was occured during receiving message")
+                print("Error was occured during receiving voice")
                 self.connection = False
 
     def sendingVideo(self):
@@ -94,12 +95,9 @@ class Chatting():
                 send_frame_bytes = send_frame.tobytes()
                 self.connInfo.video_socket.send(send_frame_bytes)
                 time.sleep(0.1)
-
-            except Exception as e:
-                print(e)
+            except:
+                print("Error was occured during sending Video")
                 self.connection = False
-        # When everything done, release the capture
-        self.cap.release()
     
     def receivingVideo(self):
         while self.connection:
@@ -116,8 +114,8 @@ class Chatting():
 
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
-            except Exception as e:
-                print(e)
+            except:
+                print("Error was occured during receiving voice")
                 self.connection = False
 
     def receivingUsers(self):
@@ -128,7 +126,7 @@ class Chatting():
                 for i, user in enumerate(data.split(',')):
                     self.usersPanel.insert(i+1, '%s\n' % user)
             except:
-                print("Error was occured during receiving message")
+                print("Error was occured during receiving user message")
                 self.connection = False
 
     def run(self):
@@ -179,13 +177,12 @@ class Chatting():
         self.buttonExit.grid(column=2, row=2, sticky=tk.N + tk.S + tk.W + tk.E)
         self.buttonExit.bind("<Button-1>", self.exitClick)
 
-        threading._start_new_thread(self.receivingMsg,())
-        threading._start_new_thread(self.sendingVoice,())
-        threading._start_new_thread(self.sendingVideo,())
-        threading._start_new_thread(self.receivingVoice,())
-        threading._start_new_thread(self.receivingUsers, ())
-        threading._start_new_thread(self.receivingVideo, ())
-
+        thread_name_lists = [self.receivingMsg, self.sendingVoice, self.sendingVideo, self.receivingVoice, self.receivingUsers, self.receivingVideo]
+        for thread_name in thread_name_lists:
+            thread = threading.Thread(target=thread_name, args=())
+            thread.daemon = True
+            thread.start()
+        
         try:
             self.root.mainloop()
         finally:
