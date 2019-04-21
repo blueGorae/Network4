@@ -1,6 +1,8 @@
 import socket 
 import threading
 import pyaudio
+import cv2
+from PIL import ImageTk, Image
 
 import tkinter as tk
 
@@ -111,6 +113,11 @@ class Chatting():
         #usersPanel
         self.usersPanel= tk.Listbox(self.mainFrame)
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
+
+        #videoPanel
+        img = ImageTk.PhotoImage(Image.open("giphy.gif"))
+        self.videoPanel = tk.Label(self.root, image = img)
+        self.videoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
