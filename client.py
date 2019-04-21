@@ -91,17 +91,8 @@ class Chatting():
                 
                 self.sendVideoPanel.configure(image=img)
                 self.sendVideoPanel.image = img               
-                    
-                send_frame_bytes = send_frame.tobytes()
-                start_index=0
-                while start_index != len(send_frame_bytes):
-                    if start_index+PAYLOAD <= len(send_frame_bytes):
-                        sent_bytes = send_frame_bytes[start_index:PAYLOAD]
-                        start_index += PAYLOAD
-                        self.connInfo.video_socket.send(sent_bytes)
-                    else:
-                        self.connInfo.video_socket.send(send_frame_bytes[start_index:])
-                        start_index = len(send_frame_bytes)
+                databytes = send_frame.tobytes()
+                self.connInfo.video_socket.send(databytes)
                 time.sleep(0.1)
             except Exception as e :
                 print(e)
@@ -109,7 +100,7 @@ class Chatting():
     
     def receivingVideo(self):
         while self.connection:
-            try:    
+            try:
                 databytes = b''
                 while len(databytes) != IMG_PAYLOAD:
                     to_read = IMG_PAYLOAD - len(databytes)
@@ -117,18 +108,10 @@ class Chatting():
                         databytes += self.connInfo.video_socket.recv(IMG_PAYLOAD)
                     else:
                         databytes += self.connInfo.video_socket.recv(to_read)
-                #databytes = self.connInfo.video_socket.recv(IMG_PAYLOAD)
 
                 recv_frame = np.fromstring(databytes, np.uint8).reshape(IMG_SIZE)
                 cv2.imshow('Friends', recv_frame)
-
-                # img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
-                # img = Image.fromarray(img)	
-                # img = ImageTk.PhotoImage(img)
                 
-                # self.recvVideoPanel.configure(image=img)
-                # self.recvVideoPanel.image = img               
-
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
             except Exception as e:

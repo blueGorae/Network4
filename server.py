@@ -6,6 +6,7 @@ import threading
 HOST = ''
 PORT = 8080
 PAYLOAD = 4096
+IMG_PAYLOAD = 320 * 240 * 3
 
 def main():
     # Store client information (conn, addr)
@@ -86,7 +87,7 @@ def main():
         # Regard the next received data as message
         while connection:
             try:
-                data = conn.recv(PAYLOAD)
+                data = conn.recv(IMG_PAYLOAD)
                 threading._start_new_thread(sendingVideo, (user_name, data))
             except Exception:
                 connection = False
@@ -112,8 +113,8 @@ def main():
         try:
             for user_name, conn_list in clientList.items():
                 # Send message to other clients
-                if rcv_user_name != user_name:
-                    conn_list["video"].send(rcv_data)
+                #if rcv_user_name != user_name:
+                conn_list["video"].send(rcv_data)
         except Exception as e:
             print(e)
 
