@@ -2,8 +2,9 @@ import socket
 import threading
 import base64
 import pyaudio
+import cv2
+from PIL import ImageTk, Image
 import time
-
 import cv2
 import numpy as np
 import tkinter as tk
@@ -82,9 +83,17 @@ class Chatting():
             try:
                 # Capture frame-by-frame
                 ret, frame = self.cap.read()
-                rgb_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
-                rgb_frame_bytes = rgb_frame.tobytes()
-                self.connInfo.video_socket.send(rgb_frame_bytes)
+                send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
+
+                img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)	
+                img = ImageTk.PhotoImage(img)
+                
+                self.sendVideoPanel.configure(image=img)
+                self.sendVideoPanel.image = img               
+                    
+                send_frame_bytes = send_frame.tobytes()
+                self.connInfo.video_socket.send(send_frame_bytes)
                 time.sleep(0.1)
             except:
                 print("Error was occured during sending Video")
@@ -94,8 +103,15 @@ class Chatting():
         while self.connection:
             try:
                 data = self.connInfo.video_socket.recv(IMG_PAYLOAD)
-                frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
-                cv2.imshow('video frames', frame)
+                recv_frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
+
+                img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)	
+                img = ImageTk.PhotoImage(img)
+                
+                self.recvVideoPanel.configure(image=img)
+                self.recvVideoPanel.image = img               
+
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
             except:
@@ -144,6 +160,15 @@ class Chatting():
         #usersPanel
         self.usersPanel= tk.Listbox(self.mainFrame)
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
+
+
+        #sendVideoPanel
+        self.sendVideoPanel = tk.Label(self.root)
+        self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
+
+        #recvVideoPanel
+        self.recvVideoPanel = tk.Label(self.root)
+        self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
