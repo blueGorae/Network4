@@ -112,7 +112,8 @@ class Chatting():
                 data_length = int.from_bytes(data, 'big')
                 databytes = self.receiveAll(self.connInfo.video_socket, data_length)
                 databytes = zlib.decompress(databytes)
-                recv_frame = np.array(list(databytes), dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
+                recv_frame = np.array(list(databytes))
+                recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
                 recv_frame = cv2.resize(recv_frame, (IMG_SIZE[1], IMG_SIZE[0]))
                 cv2.imshow('Friends', recv_frame)
                 if cv2.waitKey(100) & 0xFF == ord('q'):
