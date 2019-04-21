@@ -90,9 +90,16 @@ class Chatting():
                 
                 #self.sendVideoPanel.configure(image=img)
                 #self.sendVideoPanel.image = img               
-                    
                 send_frame_bytes = send_frame.tobytes()
-                self.connInfo.video_socket.sendall(send_frame_bytes)
+                start_index=0
+                while start_index != len(send_frame_bytes):
+                    if start_index+PAYLOAD <= len(send_frame_bytes):
+                        sent_bytes = send_frame_bytes[start_index:PAYLOAD]
+                        start_index += PAYLOAD
+                        self.connInfo.video_socket.send(sent_bytes)
+                    else:
+                        self.connInfo.video_socket.send(send_frame_bytes[start_index:])
+                        start_index = len(send_frame_bytes)
                 time.sleep(0.1)
             except Exception as e :
                 print(e)
