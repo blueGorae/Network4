@@ -115,7 +115,14 @@ class Chatting():
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #videoPanel
-        img = ImageTk.PhotoImage(Image.open("giphy.gif"))
+        self.cap = cv2.VideoCapture(0)
+        self.ret, self.frame = self.cap.read()
+
+        img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(img)	
+        img = ImageTk.PhotoImage(img)
+		
+        #img = ImageTk.PhotoImage(Image.open("giphy.gif"))
         self.sendVideoPanel = tk.Label(self.root, image = img)
         self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
 
