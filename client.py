@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 import tkinter as tk
 import zlib
+import struct
 
 CHUNK = 1024
 PAYLOAD = 4096
@@ -95,8 +96,8 @@ class Chatting():
                 send_frame = np.array(send_frame, dtype = np.uint8).reshape(1, IMG_PAYLOAD)
                 jpg_as_text = bytearray(send_frame)
 
-                send_frame_bytes = zlib.compress(jpg_as_text, 9) 
-                    
+                send_frame_bytes = jpg_as_text #zlib.compress(jpg_as_text, 9) 
+
                 self.connInfo.video_socket.send(send_frame_bytes)
                 time.sleep(0.1)
             except Exception as e :
@@ -106,7 +107,9 @@ class Chatting():
     def receivingVideo(self):
         while self.connection:
             try:
-                databytes = b''
+
+                databytes = b''                
+
                 while len(databytes) != IMG_PAYLOAD:
                     to_read = IMG_PAYLOAD - len(databytes)
                     if to_read > IMG_PAYLOAD:
@@ -114,9 +117,12 @@ class Chatting():
                     else:
                         databytes += self.connInfo.video_socket.recv(to_read)
 
-                recv_frame = zlib.decompress(databytes)
-                recv_frame = np.array(list(recv_frame))
-                recv_frame = np.array(recv_frame, np.uint8).reshape(IMG_SIZE)
+
+                #databytes = self.connInfo.video_socket.recv(IMG_PAYLOAD)
+
+                #recv_frame = zlib.decompress(databytes)
+                recv_frame = np.array(list(databytes))
+                recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(IMG_SIZE)
                 cv2.imshow('Friends', recv_frame)
                 
                 if cv2.waitKey(100) & 0xFF == ord('q'):
