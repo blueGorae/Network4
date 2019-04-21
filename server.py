@@ -93,51 +93,16 @@ def main():
             except Exception:
                 connection = False
 
-    '''
-    def receiveAll(self, socket, size):
-        databytes = b''
-        # print(size)
-        while len(databytes) != size:
-            print(databytes)
-            to_read = size - len(databytes)
-            if to_read > (IMG_PAYLOAD):
-                databytes += socket.recv(IMG_PAYLOAD)
-            else:
-                databytes += socket.recv(to_read)
-
-        return databytes
-    '''
     def sendingVideo(rcv_user_name, data_to_be_sent):
         #print(data_to_be_sent)
         try:
             for user_name, conn_list in clientList.items():
                 # Send message to other clients
-                #if rcv_user_name != user_name:
-                conn_list["video"].send(data_to_be_sent)
+                if rcv_user_name != user_name:
+                    conn_list["video"].send(data_to_be_sent)
         except Exception as e:
             print(e)
-    '''
-    def receivingData2(conn, size, rcv_user_name):
-            databytes = b''
-            i = 0
-            while i != size:
-                to_read = size - i
-                if to_read > (1000 * CHUNK):
-                    databytes = conn.recv(1000 * CHUNK)
-                    i += len(databytes)
-                    sendingVideo(rcv_user_name, databytes)
-                else:
-                    if size == 4:
-                        databytes += conn.recv(to_read)
-                    else:
-                        databytes = conn.recv(to_read)
-                    i += len(databytes)
-                    if size != 4:
-                        sendingVideo(rcv_user_name, databytes)
-            if size == 4:
-                sendingVideo(rcv_user_name, databytes)
-            return databytes
-    '''
+
     def sendingMsg(rcv_user_name, rcv_data):
         data = '[' + rcv_user_name + '] ' + rcv_data.decode('utf-8')
         data = bytes(data, 'utf-8')
@@ -154,26 +119,7 @@ def main():
                     conn_list["voice"].send(rcv_data)
         except:
             pass
-    '''
-    def sendingVideo(rcv_user_name, databytes):
-        try:
-            for user_name, conn_list in clientList.items():
-                # Send message to other clients
-                #if rcv_user_name != user_name:
-                #   print ("Video is sent")
-                while len(databytes) > 0:
-                    if (1000 * CHUNK) <= len(databytes):
-                        bytesToBeSend = databytes[:(1000 * CHUNK)]
-                        databytes = databytes[(1000 * CHUNK):]
-                        self.connInfo.video_socket.sendall(bytesToBeSend)
-                    else:
-                        bytesToBeSend = databytes
-                        self.connInfo.video_socket.sendall(bytesToBeSend)
-                        databytes = b''
-        except Exception as e:
-            print(e)
-    '''
-    
+
     def sendingUsers():
         data = ""
         for user_name, conn_list in clientList.items():

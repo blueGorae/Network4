@@ -103,15 +103,12 @@ class Chatting():
                 databytes = jpg_as_text
                 databytes = zlib.compress(jpg_as_text, 9) 
 
-                # send the length of the serialized data first
+                # send the length of the data
                 data_length = len(databytes).to_bytes(4, byteorder='big')
-                #print(data_length) 
                 self.connInfo.video_socket.send(data_length)
                 time.sleep(0.1)
-                # send the real data
-                self.sendAll(self.connInfo.video_socket, databytes)
-                #self.connInfo.video_socket.send(send_frame_bytes)
-                
+                # sene the data
+                self.connInfo.video_socket.send(databytes)
             except Exception as e :
                 print(e)
                 self.connection = False
@@ -121,16 +118,12 @@ class Chatting():
             try:
                 data = self.receiveAll(self.connInfo.video_socket, 4)
                 data_length = int.from_bytes(data, 'big')
-                # print(str(len(data))+":"+str(data_length))
-                print(data_length)
                 databytes = self.receiveAll(self.connInfo.video_socket, data_length)
-                #print(databytes)
                 databytes = zlib.decompress(databytes)
                 recv_frame = np.array(list(databytes))
                 recv_frame = np.array(recv_frame, dtype = np.uint8).reshape(COMPRESSED_IMG_SIZE)
                 recv_frame = cv2.resize(recv_frame, (IMG_SIZE[1], IMG_SIZE[0]))
                 cv2.imshow('Friends', recv_frame)
-                
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
             except Exception as e:
@@ -147,28 +140,12 @@ class Chatting():
             except:
                 print("Error was occured during receiving user message")
                 self.connection = False
-    def sendAll(self, socket, data):
-        while len(data) > 0:
-            if (1000 * CHUNK) <= len(data):
-                sentData = data[:(1000 * CHUNK)]
-                data = data[(1000 * CHUNK):]
-                socket.send(sentData)
-            else:
-                sentData = data
-                socket.send(sentData)
-                data = b''
     
     def receiveAll(self, socket, size):
         databytes = b''
-        # print(size)
         while len(databytes) != size:
-            print(databytes)
             to_read = size - len(databytes)
-            if to_read > (IMG_PAYLOAD):
-                databytes += socket.recv(IMG_PAYLOAD)
-            else:
-                databytes += socket.recv(to_read)
-
+            databytes += socket.recv(to_read)
         return databytes
 
     def run(self):
@@ -207,10 +184,6 @@ class Chatting():
         #sendVideoPanel
         self.sendVideoPanel = tk.Label(self.root)
         self.sendVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
-
-        #recvVideoPanel
-        # self.recvVideoPanel = tk.Label(self.root)
-        # self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
@@ -270,7 +243,6 @@ class Connect():
         window.mainloop()
 
     def defaultClick(self, event, host, port, username, window):
-        print("???")
         self.host = HOST
         self.port = PORT
         self.user_name = USERNAME + str(random.randrange(1,1000))
