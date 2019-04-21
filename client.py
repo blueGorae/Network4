@@ -8,7 +8,7 @@ import time
 import cv2
 import numpy as np
 import tkinter as tk
-
+import zlib
 
 CHUNK = 1024
 PAYLOAD = 4096
@@ -84,14 +84,19 @@ class Chatting():
                 # Capture frame-by-frame
                 ret, frame = self.cap.read()
                 send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
+
                 img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)	
                 img = ImageTk.PhotoImage(img)
                 
                 self.sendVideoPanel.configure(image=img)
-                self.sendVideoPanel.image = img               
+                self.sendVideoPanel.image = img        
+                       
+                send_frame = np.array(send_frame, dtype = np.uint8).reshape(1, IMG_PAYLOAD)
+                jpg_as_text = bytearray(send_frame)
+
+                send_frame_bytes = zlib.compress(jpg_as_text, 9) 
                     
-                send_frame_bytes = send_frame.tobytes()
                 self.connInfo.video_socket.send(send_frame_bytes)
                 time.sleep(0.1)
             except:
@@ -102,7 +107,9 @@ class Chatting():
         while self.connection:
             try:
                 data = self.connInfo.video_socket.recv(IMG_PAYLOAD)
-                recv_frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
+                recv_frame = zlib.decompress(data)
+                recv_frame = np.array(list(recv_frame))
+                recv_frame = np.array(recv_frame, np.uint8).reshape(IMG_SIZE)
 
                 img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(img)	
