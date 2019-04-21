@@ -74,8 +74,8 @@ class Chatting():
             try:
                 data = self.connInfo.voice_socket.recv(PAYLOAD)
                 self.receive_stream.write(data, CHUNK)
-            except:
-                print("Error was occured during receiving voice")
+            except Exception as e:
+                print(e)
                 self.connection = False
 
     def sendingVideo(self):
@@ -88,33 +88,42 @@ class Chatting():
                 img = Image.fromarray(img)	
                 img = ImageTk.PhotoImage(img)
                 
-                self.sendVideoPanel.configure(image=img)
-                self.sendVideoPanel.image = img               
+                #self.sendVideoPanel.configure(image=img)
+                #self.sendVideoPanel.image = img               
                     
                 send_frame_bytes = send_frame.tobytes()
-                self.connInfo.video_socket.send(send_frame_bytes)
+                self.connInfo.video_socket.sendall(send_frame_bytes)
                 time.sleep(0.1)
-            except:
-                print("Error was occured during sending Video")
+            except Exception as e :
+                print(e)
                 self.connection = False
     
     def receivingVideo(self):
         while self.connection:
-            try:
-                data = self.connInfo.video_socket.recv(IMG_PAYLOAD)
-                recv_frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
+            try:    
+                databytes = b''
+                while len(databytes) != IMG_SIZE:
+                    to_read = IMG_PAYLOAD - len(databytes)
+                    if to_read > IMG_SIZE:
+                        databytes += self.connInfo.video_socket.recv(1000 * CHUNK)
+                    else:
+                        databytes += self.connInfo.video_socket.recv(to_read)
+                #databytes = self.connInfo.video_socket.recv(IMG_PAYLOAD)
 
-                img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(img)	
-                img = ImageTk.PhotoImage(img)
+                recv_frame = np.fromstring(databytes, np.uint8).reshape(IMG_SIZE)
+                cv2.imshow('ffff', recv_frame)
+                #img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
                 
-                self.recvVideoPanel.configure(image=img)
-                self.recvVideoPanel.image = img               
+                #img = Image.fromarray(img)	
+                #img = ImageTk.PhotoImage(img)
+                
+                #self.recvVideoPanel.configure(image=img)
+                #self.recvVideoPanel.image = img               
 
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
-            except:
-                print("Error was occured during receiving voice")
+            except Exception as e:
+                print(e)
                 self.connection = False
 
     def receivingUsers(self):
