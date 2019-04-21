@@ -74,8 +74,8 @@ class Chatting():
             try:
                 data = self.connInfo.voice_socket.recv(PAYLOAD)
                 self.receive_stream.write(data, CHUNK)
-            except:
-                print("Error was occured during receiving voice")
+            except Exception as e:
+                print(e)
                 self.connection = False
 
     def sendingVideo(self):
@@ -99,29 +99,30 @@ class Chatting():
                     
                 self.connInfo.video_socket.send(send_frame_bytes)
                 time.sleep(0.1)
-            except:
-                print("Error was occured during sending Video")
+            except Exception as e :
+                print(e)
                 self.connection = False
     
     def receivingVideo(self):
         while self.connection:
             try:
-                data = self.connInfo.video_socket.recv(IMG_PAYLOAD)
-                recv_frame = zlib.decompress(data)
+                databytes = b''
+                while len(databytes) != IMG_PAYLOAD:
+                    to_read = IMG_PAYLOAD - len(databytes)
+                    if to_read > IMG_PAYLOAD:
+                        databytes += self.connInfo.video_socket.recv(IMG_PAYLOAD)
+                    else:
+                        databytes += self.connInfo.video_socket.recv(to_read)
+
+                recv_frame = zlib.decompress(databytes)
                 recv_frame = np.array(list(recv_frame))
                 recv_frame = np.array(recv_frame, np.uint8).reshape(IMG_SIZE)
-
-                img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(img)	
-                img = ImageTk.PhotoImage(img)
+                cv2.imshow('Friends', recv_frame)
                 
-                self.recvVideoPanel.configure(image=img)
-                self.recvVideoPanel.image = img               
-
                 if cv2.waitKey(100) & 0xFF == ord('q'):
                     break
-            except:
-                print("Error was occured during receiving voice")
+            except Exception as e:
+                print(e)
                 self.connection = False
 
     def receivingUsers(self):
@@ -170,11 +171,11 @@ class Chatting():
 
         #sendVideoPanel
         self.sendVideoPanel = tk.Label(self.root)
-        self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.sendVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #recvVideoPanel
-        self.recvVideoPanel = tk.Label(self.root)
-        self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
+        # self.recvVideoPanel = tk.Label(self.root)
+        # self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
