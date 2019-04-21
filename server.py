@@ -6,7 +6,7 @@ import threading
 HOST = ''
 PORT = 8080
 PAYLOAD = 4096
-
+IMG_PAYLOAD = 480*640*3
 
 def main():
     # Store client information (conn, addr)
@@ -38,22 +38,28 @@ def main():
             if user_name not in clientList.keys():
                 clientList[user_name] = {}
             clientList[user_name]["voice"] = conn
+        elif conn_type.startswith("video"):
+            user_name = conn_type[5:]
+            if user_name not in clientList.keys():
+                clientList[user_name] = {}
+            clientList[user_name]["video"] = conn
         else: #user
             user_name = conn_type[4:]
             if user_name not in clientList.keys():
                 clientList[user_name] = {}
             clientList[user_name]["user"] = conn
         clientLock.release()        
-        if len(clientList[user_name]) == 3:
+        if len(clientList[user_name]) == 4:
             threading._start_new_thread(receivingMsg, (clientList[user_name]["text"], user_name))
             threading._start_new_thread(receivingVoice, (clientList[user_name]["voice"], user_name))
+            threading._start_new_thread(receivingVideo, (clientList[user_name]["video"], user_name))
             threading._start_new_thread(sendingUsers, ())
 
     def receivingMsg(conn, user_name):
         connection = True
         while connection:
             try:
-                data = conn.recv(1024)
+                data = conn.recv(PAYLOAD)
                 print(data)
                 threading._start_new_thread(sendingMsg, (user_name, data))
             except Exception:
@@ -76,6 +82,16 @@ def main():
             except Exception:
                 connection = False
 
+    def receivingVideo(conn, user_name):
+        connection = True
+        # Regard the next received data as message
+        while connection:
+            try:
+                data = conn.recv(IMG_PAYLOAD)
+                threading._start_new_thread(sendingVideo, (user_name, data))
+            except Exception:
+                connection = False
+
     def sendingMsg(rcv_user_name, rcv_data):
         data = '[' + rcv_user_name + '] ' + rcv_data.decode('utf-8')
         data = bytes(data, 'utf-8')
@@ -92,6 +108,15 @@ def main():
                     conn_list["voice"].send(rcv_data)
         except:
             pass
+
+    def sendingVideo(rcv_user_name, rcv_data):
+        try:
+            for user_name, conn_list in clientList.items():
+                # Send message to other clients
+                conn_list["video"].send(rcv_data)
+        except Exception as e:
+            print(e)
+
     def sendingUsers():
         data = ""
         for user_name, conn_list in clientList.items():
