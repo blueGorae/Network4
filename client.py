@@ -1,9 +1,12 @@
 import socket 
 import threading
+import base64
 import pyaudio
 import cv2
 from PIL import ImageTk, Image
-
+import time
+import cv2
+import numpy as np
 import tkinter as tk
 
 
@@ -12,6 +15,8 @@ PAYLOAD = 4096
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 20000
+IMG_PAYLOAD = 640 * 480 * 3
+IMG_SIZE = [480, 640, 3]
 
 
 class Chatting():
@@ -21,6 +26,7 @@ class Chatting():
         p = pyaudio.PyAudio()
         self.receive_stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
         self.send_stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+        self.cap = cv2.VideoCapture(0)
 
     def clearResources(self):
         self.connection = False
@@ -71,6 +77,49 @@ class Chatting():
                 print("Error was occured during receiving message")
                 self.connection = False
 
+    def sendingVideo(self):
+        while self.connection:
+            try:
+                # Capture frame-by-frame
+                ret, frame = self.cap.read()
+                send_frame = cv2.resize(frame, (IMG_SIZE[1], IMG_SIZE[0]))
+
+                img = cv2.cvtColor(send_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)	
+                img = ImageTk.PhotoImage(img)
+                
+                self.sendVideoPanel.configure(image=img)
+                self.sendVideoPanel.image = img               
+                    
+                send_frame_bytes = send_frame.tobytes()
+                self.connInfo.video_socket.send(send_frame_bytes)
+                time.sleep(0.1)
+
+            except Exception as e:
+                print(e)
+                self.connection = False
+        # When everything done, release the capture
+        self.cap.release()
+    
+    def receivingVideo(self):
+        while self.connection:
+            try:
+                data = self.connInfo.video_socket.recv(IMG_PAYLOAD)
+                recv_frame = np.fromstring(data, np.uint8).reshape(IMG_SIZE)
+
+                img = cv2.cvtColor(recv_frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)	
+                img = ImageTk.PhotoImage(img)
+                
+                self.recvVideoPanel.configure(image=img)
+                self.recvVideoPanel.image = img               
+
+                if cv2.waitKey(100) & 0xFF == ord('q'):
+                    break
+            except Exception as e:
+                print(e)
+                self.connection = False
+
     def receivingUsers(self):
         while self.connection:
             try:
@@ -114,19 +163,13 @@ class Chatting():
         self.usersPanel= tk.Listbox(self.mainFrame)
         self.usersPanel.grid(column=2, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
-        #videoPanel
-        self.cap = cv2.VideoCapture(0)
-        self.ret, self.frame = self.cap.read()
 
-        img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img)	
-        img = ImageTk.PhotoImage(img)
-		
-        #img = ImageTk.PhotoImage(Image.open("giphy.gif"))
-        self.sendVideoPanel = tk.Label(self.root, image = img)
+        #sendVideoPanel
+        self.sendVideoPanel = tk.Label(self.root)
         self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
 
-        self.recvVideoPanel = tk.Label(self.root, image = img)
+        #recvVideoPanel
+        self.recvVideoPanel = tk.Label(self.root)
         self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
@@ -138,8 +181,10 @@ class Chatting():
 
         threading._start_new_thread(self.receivingMsg,())
         threading._start_new_thread(self.sendingVoice,())
+        threading._start_new_thread(self.sendingVideo,())
         threading._start_new_thread(self.receivingVoice,())
         threading._start_new_thread(self.receivingUsers, ())
+        threading._start_new_thread(self.receivingVideo, ())
 
         try:
             self.root.mainloop()
@@ -187,6 +232,10 @@ class Connect():
         self.port = int(port.get())
         self.user_name = username.get()
 
+        self.host = '127.0.0.1'
+        self.port = 8080
+        self.user_name = "ddd"
+
         self.text_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.text_socket.connect((self.host, self.port))
         self.text_socket.send(bytes("text"+self.user_name, "utf-8"))
@@ -198,6 +247,10 @@ class Connect():
         self.user_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.user_socket.connect((self.host, self.port))
         self.user_socket.send(bytes("user"+self.user_name, "utf-8"))
+
+        self.video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.video_socket.connect((self.host, self.port))
+        self.video_socket.send(bytes("video"+self.user_name, "utf-8"))
 
         window.destroy()
 
