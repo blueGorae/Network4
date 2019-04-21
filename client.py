@@ -116,8 +116,11 @@ class Chatting():
 
         #videoPanel
         img = ImageTk.PhotoImage(Image.open("giphy.gif"))
-        self.videoPanel = tk.Label(self.root, image = img)
-        self.videoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.sendVideoPanel = tk.Label(self.root, image = img)
+        self.sendVideoPanel.grid(column=0, row=3, sticky=tk.N + tk.S + tk.W + tk.E)
+
+        self.recvVideoPanel = tk.Label(self.root, image = img)
+        self.recvVideoPanel.grid(column=3, row=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         #ExitButton
         self.buttonExit = tk.Button(self.mainFrame)
